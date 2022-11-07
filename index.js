@@ -6,6 +6,7 @@ var serviceAccount = require("./service_key.json");
 const multer = require('multer')
 const reader = require('xlsx')
 
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, 'contactFiles/')
@@ -21,6 +22,7 @@ admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
   databaseURL: "https://stock-police.firebaseapp.com"
 });
+
 const firestore = admin.firestore();  
 const messaging = admin.messaging()
 
@@ -36,12 +38,20 @@ app.post('/uploadContacts', upload.single('file'), async (req, res) => {
   log("uploading contacts", req.file.path)
   const file = reader.readFile(req.file.path)
   const temp = reader.utils.sheet_to_json(file.Sheets[file.SheetNames[0]])
-  const resp = await processUserData(temp)
+  const resp = await processUserData(temp, req.body.groupId)
   res.json({})
 })
 
+app.post('/createNewuser', async(req,res) => {
+  const {userData} = req.body
+  console.log("===", userData)
+  const userResp = await createUser(userData.mobileNo, userData)
+  
+  res.send(userResp)
+})
+
 app.post('/subscribe', (req,res) => {
-  const {tokenId} = req.body
+  const {tokenId, groups} = req.body
   
   if (!tokenId) {
     log("Request to subscribe without token id")
@@ -51,15 +61,18 @@ app.post('/subscribe', (req,res) => {
     log("Subscribing notifications for token : ", tokenId)
   }
   
-  messaging.subscribeToTopic([tokenId], 'stockAlerts')
-  .then((response) => {
-    res.send({})
-    log('Successfully subscribed to topic:',tokenId, response);
+  groups.forEach((group, index) => {
+    messaging.subscribeToTopic([tokenId], group)
+    .then((response) => {
+      log('Successfully subscribed to topic:',group, response);
+      if (index == groups.length - 1) res.send({})
+    })
+    .catch((error) => {
+      res.send(error)
+      log('Error subscribing to topic:', tokenId, error);
+    });
   })
-  .catch((error) => {
-    res.send(error)
-    log('Error subscribing to topic:', tokenId, error);
-  });
+
 })
 
 app.post('/unsubscribe', (req,res) => {
@@ -133,50 +146,59 @@ app.post('/sendnotification', (req,res) => {
   });
 })
 
-const processUserData = async(userData) => {
+const processUserData = async(userData, groupId) => {
   for(let res of userData) {
-    const userResp = await checkUser(res.contact_number.toString())
+    let userProfile = {
+      mobileNo : res.contact_number.toString(),
+      clientCode : res.client_code.toString(),
+      userName : res.name.toString(),
+      groups : [groupId]
+    }
+    const userResp = await createUser(res.contact_number.toString(), userProfile)
     log(userResp)
   }
 }
 
-const checkUser = async(mobileNo) => {
+const createUser = async(mobileNo, userProfile) => {
+
+  log("Creating new user : ", mobileNo, JSON.stringify(userProfile))
+
   return new Promise((resolve, reject) => {
    firestore.collection('users').doc(mobileNo).get()
     .then(function async(docRef) {
       if (docRef.data()) {
-        log(`User with mobile no ${mobileNo} already exists. Activating...`)
+        log(`User with mobile no ${mobileNo} already exists, merging groups...`)
         firestore.collection('users').doc(mobileNo).update({
-          isActive:true,
-          isNotiEnabled:true
+          groups : admin.firestore.FieldValue.arrayUnion(userProfile.groups[0])
         })
         .then(function(docRef) {
-          resolve('')
-          log(`User with mobile no ${mobileNo} activated.`)
+          resolve({})
+          log(`User with mobile no ${mobileNo} merged.`)
         })
         .catch(function(error) {
           reject('')
-          log(`Failed to make ${mobileNo} active`, JSON.stringify(error))
+          log(`Failed to merge ${mobileNo} groups`, JSON.stringify(error))
         });
+        resolve({})
       } else {
         log(`User with mobile no ${mobileNo} does not exist. Creating new doc`)
         firestore.collection('users').doc(mobileNo).set({
+          ...userProfile,
           isActive : true,
-          mobileNo : mobileNo,
           isNotiEnabled:true
         })
         .then(function(docRef) {
           log(`User with mobile no ${mobileNo} created successully`)
-          resolve('')
+          resolve({})
         })
         .catch(function(error) {
           log(`Failed to make ${mobileNo} active`, JSON.stringify(error))
-          reject('')
+          reject(error)
         });
       }
     })
     .catch(function(error) {
-      reject('')
+      reject(error)
       log(`Failed to get ${mobileNo} document to check if it exist or not`, JSON.stringify(error));
     });  
   })
