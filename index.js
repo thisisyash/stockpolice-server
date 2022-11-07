@@ -98,20 +98,19 @@ app.post('/unsubscribe', (req,res) => {
 })
 
 app.post('/sendnotification', (req,res) => {
-  const {title, body, description} = req.body
+  const {topic, body, description} = req.body
   
-  if (!title || !body) {
+  if (!body) {
     log("Sending notification without title or body")
     res.send({error : 'No title or body found'})
     return
   } else {
-    log("Sending new notification: ", title, body)
+    log("Sending new notification: ", group, body)
   }
   
   const message = {
     notification: {
-      title: title,
-      body: body
+      title: body
     },
     data: {
       description : description
@@ -127,7 +126,7 @@ app.post('/sendnotification', (req,res) => {
       title: title,
       body: body,
       description : description,
-      topic: 'stockAlerts',
+      topic: topic,
       timeStamp : Date.now()
     }
     firestore.collection('alerts').doc().set(notiData)
