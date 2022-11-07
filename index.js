@@ -44,16 +44,13 @@ app.post('/uploadContacts', upload.single('file'), async (req, res) => {
 
 app.post('/createNewuser', async(req,res) => {
   const {userData} = req.body
-  console.log("===", userData)
+  log("Creating user with data", userData)
   const userResp = await createUser(userData.mobileNo, userData)
-  
   res.send(userResp)
 })
 
 app.post('/subscribe', (req,res) => {
   const {tokenId, groups} = req.body
-
-  console.log("=========", req.body)
   
   if (!tokenId) {
     log("Request to subscribe without token id")
@@ -112,8 +109,7 @@ app.post('/sendnotification', (req,res) => {
   
   const message = {
     notification: {
-      title: body,
-      body:'hello'
+      body:body
     },
     topic: topic
   };
