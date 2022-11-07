@@ -52,6 +52,8 @@ app.post('/createNewuser', async(req,res) => {
 
 app.post('/subscribe', (req,res) => {
   const {tokenId, groups} = req.body
+
+  console.log("=========", req.body)
   
   if (!tokenId) {
     log("Request to subscribe without token id")
@@ -98,24 +100,22 @@ app.post('/unsubscribe', (req,res) => {
 })
 
 app.post('/sendnotification', (req,res) => {
-  const {topic, body, description} = req.body
+  const {topic, body} = req.body
   
   if (!body) {
     log("Sending notification without title or body")
     res.send({error : 'No title or body found'})
     return
   } else {
-    log("Sending new notification: ", group, body)
+    log("Sending new notification: ", topic, body)
   }
   
   const message = {
     notification: {
-      title: body
+      title: body,
+      body:'hello'
     },
-    data: {
-      description : description
-    },
-    topic: 'stockAlerts'
+    topic: topic
   };
 
   messaging.send(message)
@@ -123,9 +123,7 @@ app.post('/sendnotification', (req,res) => {
     // Response is a message ID string.
     log('Successfully sent notification:', response);
     const notiData = {
-      title: title,
       body: body,
-      description : description,
       topic: topic,
       timeStamp : Date.now()
     }
