@@ -63,7 +63,7 @@ app.post('/subscribe', (req,res) => {
   groups.forEach((group, index) => {
     messaging.subscribeToTopic([tokenId], group)
     .then((response) => {
-      log('Successfully subscribed to topic:',group, response);
+      log('Successfully subscribed to topic:',group, tokenId);
       if (index == groups.length - 1) res.send({})
     })
     .catch((error) => {
@@ -88,7 +88,7 @@ app.post('/unsubscribe', (req,res) => {
   groups.forEach((group, index) => {
     messaging.unsubscribeFromTopic([tokenId], group)
     .then((response) => {
-      log('Successfully UNsubscribed to topic:',tokenId, response);
+      log('Successfully UNsubscribed to topic:',tokenId, group);
       if (index == groups.length - 1) res.send({})
     })
     .catch((error) => {
