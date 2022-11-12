@@ -75,7 +75,7 @@ app.post('/subscribe', (req,res) => {
 })
 
 app.post('/unsubscribe', (req,res) => {
-  const {tokenId} = req.body
+  const {tokenId, groups} = req.body
   
   if (!tokenId) {
     log("Request to unsubscribe without token id")
