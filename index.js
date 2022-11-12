@@ -84,16 +84,18 @@ app.post('/unsubscribe', (req,res) => {
   } else {
     log("UnSubscribing notifications for token : ", tokenId)
   }
-  
-  messaging.unsubscribeFromTopic([tokenId], 'stockAlerts')
-  .then((response) => {
-    res.send({})
-    log('Successfully UNsubscribed to topic:',tokenId, response);
+
+  groups.forEach((group, index) => {
+    messaging.unsubscribeFromTopic([tokenId], group)
+    .then((response) => {
+      log('Successfully UNsubscribed to topic:',tokenId, response);
+      if (index == groups.length - 1) res.send({})
+    })
+    .catch((error) => {
+      res.send(error)
+      log('Error UNsubscribing to topic:', tokenId, error);
+    });
   })
-  .catch((error) => {
-    res.send(error)
-    log('Error UNsubscribing to topic:', tokenId, error);
-  });
 })
 
 app.post('/sendnotification', (req,res) => {
