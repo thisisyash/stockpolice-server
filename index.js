@@ -63,12 +63,12 @@ app.post('/subscribe', (req,res) => {
   groups.forEach((group, index) => {
     messaging.subscribeToTopic([tokenId], group)
     .then((response) => {
-      log('Successfully subscribed to topic:',group, tokenId);
+      log('Successfully subscribed to topic:',group);
       if (index == groups.length - 1) res.send({})
     })
     .catch((error) => {
       res.send(error)
-      log('Error subscribing to topic:', tokenId, error);
+      log('Error subscribing to topic:', group, error);
     });
   })
 
@@ -88,12 +88,12 @@ app.post('/unsubscribe', (req,res) => {
   groups.forEach((group, index) => {
     messaging.unsubscribeFromTopic([tokenId], group)
     .then((response) => {
-      log('Successfully UNsubscribed to topic:',tokenId, group);
+      log('Successfully UNsubscribed to topic:', group);
       if (index == groups.length - 1) res.send({})
     })
     .catch((error) => {
       res.send(error)
-      log('Error UNsubscribing to topic:', tokenId, error);
+      log('Error Unsubscribing to topic:', group, error);
     });
   })
 })
