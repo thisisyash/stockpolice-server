@@ -99,7 +99,7 @@ app.post('/unsubscribe', (req,res) => {
 })
 
 app.post('/sendnotification', (req,res) => {
-  const {topic, body} = req.body
+  const {topic, body, uid} = req.body
   
   if (!body) {
     log("Sending notification without title or body")
@@ -123,9 +123,10 @@ app.post('/sendnotification', (req,res) => {
     const notiData = {
       body: body,
       topic: topic,
+      uid : uid,
       timeStamp : Date.now()
     }
-    firestore.collection('alerts').doc().set(notiData)
+    firestore.collection('alerts').doc(uid).set(notiData)
     .then(function(docRef) {
       log(`Notification set with data`, JSON.stringify(notiData))
       res.send({})
