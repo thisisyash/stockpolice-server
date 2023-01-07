@@ -135,6 +135,14 @@ app.post('/sendnotification', (req,res) => {
     notification: {
       body:body
     },
+    android: {
+      priority:'high',
+      notification: {
+        sound:"mysound",
+        priority:"max",
+        visibility:"public"
+      }
+    },
     topic: topic
   };
 
