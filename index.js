@@ -98,6 +98,28 @@ app.post('/unsubscribe', (req,res) => {
   })
 })
 
+app.post('/refreshNotifications', (req, res) => {
+
+  const {topic} = req.body
+
+  console.log("-------", topic)
+  const message = {
+    data:{key : "REFRESH_NOTIFICATION"},
+    topic: topic
+  };
+
+  messaging.send(message)
+  .then((response) => {
+    // Response is a message ID string.
+    log('EDIT Successfully sent notification:', response);
+    res.send({})
+  })
+  .catch((error) => {
+    res.send({error : 'Some error occured sending notifications'})
+    log('EDIT Error sending notification:', error);
+  });
+})
+
 app.post('/sendnotification', (req,res) => {
   const {topic, body, uid} = req.body
   
