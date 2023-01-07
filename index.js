@@ -101,8 +101,6 @@ app.post('/unsubscribe', (req,res) => {
 app.post('/refreshNotifications', (req, res) => {
 
   const {topic} = req.body
-
-  console.log("-------", topic)
   const message = {
     data:{key : "REFRESH_NOTIFICATION"},
     topic: topic
@@ -140,6 +138,7 @@ app.post('/sendnotification', (req,res) => {
       notification: {
         sound:"mysound",
         priority:"max",
+        channelId:"alarm",
         visibility:"public"
       }
     },
