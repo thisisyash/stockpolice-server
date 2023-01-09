@@ -138,7 +138,7 @@ app.post('/sendnotification', (req,res) => {
       notification: {
         sound:"mysound",
         priority:"max",
-        channelId:"alarm",
+        channelId:"stockalert",
         visibility:"public"
       }
     },
