@@ -3,6 +3,7 @@ const bodyParser = require('body-parser')
 const cors       = require('cors')
 const multer     = require('multer')
 const reader     = require('xlsx')
+const fs         = require('fs')
 
 var admin          = require("firebase-admin")
 
@@ -24,7 +25,7 @@ const upload = multer({ storage: storage })
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
   databaseURL: process.env.DB_URL
-});
+})
 
 const firestore = admin.firestore();  
 const messaging = admin.messaging()
@@ -35,8 +36,14 @@ app.listen(port,
   console.log(`Starting server in : ${process.env.NODE_ENV} on port : ${port}`)
 })
 app.use(bodyParser.json())
-app.use(cors());
-app.options('*', cors());
+app.use(cors())
+app.options('*', cors())
+
+app.get('/', async(req, res) => {
+  log("Welcome")
+  res.send("Welcome")
+})
+
 
 app.post('/uploadContacts', upload.single('file'), async (req, res) => {
   log("uploading contacts", req.file.path)
@@ -237,6 +244,12 @@ const createUser = async(mobileNo, userProfile) => {
 
 
 const log = (label, value) => {
+  const date     = new Date(),
+        fileName = date.getDate() + - date.getMonth()
+  let logData = label
+  if (value) logData = label + "," + value
+  logData = logData + "\n"
+  fs.appendFileSync(`${fileName}-log.txt`, logData)
   if (value)
     console.log(label, value)
   else
