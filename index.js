@@ -1,11 +1,14 @@
-const app = require('express')()
+const app        = require('express')()
 const bodyParser = require('body-parser')
-const cors = require('cors');
-var admin = require("firebase-admin");
-var serviceAccount = require("./service_key.json");
-const multer = require('multer')
-const reader = require('xlsx')
+const cors       = require('cors')
+const multer     = require('multer')
+const reader     = require('xlsx')
 
+var admin          = require("firebase-admin")
+
+var serviceAccount = require(`./${process.env.NODE_ENV == 'production' ? 'prod':'test'}_service_key.json`)
+
+require('dotenv').config({path: `.env.${process.env.NODE_ENV}`})
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -20,15 +23,16 @@ const upload = multer({ storage: storage })
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
-  databaseURL: "https://stock-police.firebaseapp.com"
+  databaseURL: process.env.DB_URL
 });
 
 const firestore = admin.firestore();  
 const messaging = admin.messaging()
+const port      = process.env.PORT || 3600
 
-app.listen(process.env.PORT || 3600, 
+app.listen(port, 
 () => {
-  console.log("Server started on port " + process.env.PORT)
+  console.log(`Starting server in : ${process.env.NODE_ENV} on port : ${port}`)
 })
 app.use(bodyParser.json())
 app.use(cors());
@@ -43,6 +47,7 @@ app.post('/uploadContacts', upload.single('file'), async (req, res) => {
 })
 
 app.post('/createNewuser', async(req,res) => {
+
   const {userData} = req.body
   log("Creating user with data", userData)
   const userResp = await createUser(userData.mobileNo, userData)
@@ -50,6 +55,7 @@ app.post('/createNewuser', async(req,res) => {
 })
 
 app.post('/subscribe', (req,res) => {
+
   const {tokenId, groups} = req.body
   
   if (!tokenId) {
@@ -75,6 +81,7 @@ app.post('/subscribe', (req,res) => {
 })
 
 app.post('/unsubscribe', (req,res) => {
+
   const {tokenId, groups} = req.body
   
   if (!tokenId) {
@@ -102,19 +109,18 @@ app.post('/refreshNotifications', (req, res) => {
 
   const {topic} = req.body
   const message = {
-    data:{key : "REFRESH_NOTIFICATION"},
-    topic: topic
+    data  : {key : "REFRESH_NOTIFICATION"},
+    topic : topic
   };
 
   messaging.send(message)
   .then((response) => {
-    // Response is a message ID string.
-    log('EDIT Successfully sent notification:', response);
+    log('Refresh notification send successfully', response);
     res.send({})
   })
   .catch((error) => {
-    res.send({error : 'Some error occured sending notifications'})
-    log('EDIT Error sending notification:', error);
+    res.send({error : 'Some error occured to send refresh notification'})
+    log('Failed to send refresh notification : ', error);
   });
 })
 
@@ -134,12 +140,12 @@ app.post('/sendnotification', (req,res) => {
       body:body
     },
     android: {
-      priority:'high',
+      priority : 'high',
       notification: {
-        sound:"mysound",
-        priority:"max",
-        channelId:"stockalert",
-        visibility:"public"
+        sound      : 'mysound',
+        priority   : 'max',
+        channelId  : 'stockalert',
+        visibility : 'public'
       }
     },
     topic: topic
@@ -147,12 +153,11 @@ app.post('/sendnotification', (req,res) => {
 
   messaging.send(message)
   .then((response) => {
-    // Response is a message ID string.
     log('Successfully sent notification:', response);
     const notiData = {
-      body: body,
-      topic: topic,
-      uid : uid,
+      body      : body,
+      topic     : topic,
+      uid       : uid,
       timeStamp : Date.now()
     }
     firestore.collection('alerts').doc(uid).set(notiData)
@@ -172,12 +177,13 @@ app.post('/sendnotification', (req,res) => {
 })
 
 const processUserData = async(userData, groupId) => {
+
   for(let res of userData) {
     let userProfile = {
-      mobileNo : res.contact_number.toString(),
+      mobileNo   : res.contact_number.toString(),
       clientCode : res.client_code.toString(),
-      userName : res.name.toString(),
-      groups : [groupId]
+      userName   : res.name.toString(),
+      groups     : [groupId]
     }
     const userResp = await createUser(res.contact_number.toString(), userProfile)
     log(userResp)
@@ -228,52 +234,6 @@ const createUser = async(mobileNo, userProfile) => {
     });  
   })
 }
-
-app.post('/createOrder', (req, res)=>{ 
-  
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header("Access-Control-Allow-Headers", "X-Requested-With");
-
-  const {mobileNos}  = req.body;  
-
-  console.log(mobileNos)
-
-  mobileNos.split(',').forEach(mobileNo => {
-    log(mobileNo)
-  });
-  const mobileNo = '8181818181'
-
-  // firestore.collection('users').doc(mobileNo).get()
-  // .then(function(docRef) {
-  //   if (docRef.data()) {
-  //     log(`User with mobile no ${mobileNo} already exists. Activating...`)
-  //     firestore.collection('users').doc(mobileNo).update({
-  //       isActive:true
-  //     })
-  //     .then(function(docRef) {
-  //       log(`User with mobile no ${mobileNo} activated.`)
-  //     })
-  //     .catch(function(error) {
-  //       log(`Failed to make ${mobileNo} active`, JSON.stringify(error))
-  //     });
-  //   } else {
-  //     log(`User with mobile no ${mobileNo} does not exist. Creating new doc`)
-  //     firestore.collection('users').doc(mobileNo).set({
-  //       isActive : true,
-  //       mobileNo : mobileNo
-  //     })
-  //     .then(function(docRef) {
-  //       log(`User with mobile no ${mobileNo} created successully`)
-  //     })
-  //     .catch(function(error) {
-  //       log(`Failed to make ${mobileNo} active`, JSON.stringify(error))
-  //     });
-  //   }
-  // })
-  // .catch(function(error) {
-  //   log(`Failed to get ${mobileNo} document to check if it exist or not`, JSON.stringify(error));
-  // });  
-})
 
 
 const log = (label, value) => {
