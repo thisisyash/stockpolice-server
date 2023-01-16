@@ -207,7 +207,8 @@ const createUser = async(mobileNo, userProfile) => {
       if (docRef.data()) {
         log(`User with mobile no ${mobileNo} already exists, merging groups...`)
         firestore.collection('users').doc(mobileNo).update({
-          groups : admin.firestore.FieldValue.arrayUnion(userProfile.groups[0])
+          groups : admin.firestore.FieldValue.arrayUnion(userProfile.groups[0]),
+          clientCode : userProfile.clientCode
         })
         .then(function(docRef) {
           resolve({})
