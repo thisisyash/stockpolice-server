@@ -131,6 +131,17 @@ app.post('/refreshNotifications', (req, res) => {
   });
 })
 
+app.post('/appVersionCheck', (req, res) => {
+
+  console.log("App Version Check")
+
+  res.json({
+    message : "App is up to date",
+    error:"NO_UPDATE_ERR"
+  })
+
+})
+
 app.post('/sendnotification', (req,res) => {
   const {topic, body, uid} = req.body
   
