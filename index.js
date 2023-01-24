@@ -134,6 +134,19 @@ app.post('/refreshNotifications', (req, res) => {
 app.post('/appVersionCheck', (req, res) => {
 
   console.log("App Version Check")
+  const {platform,
+    device_id,
+    app_id,
+    custom_id,
+    plugin_version,
+    version_build,
+    version_code,
+    version_name,
+    version_os,
+    is_emulator,
+    is_prod} = req.body
+  console.log("=========>", platform, device_id, app_id, custom_id, plugin_version, version_build,
+    version_code, version_name, version_os, is_emulator, is_prod)
 
   res.json({
     message : "App is up to date",
