@@ -145,14 +145,18 @@ app.post('/appVersionCheck', (req, res) => {
     version_os,
     is_emulator,
     is_prod} = req.body
-  console.log("=========>", platform, device_id, app_id, custom_id, plugin_version, version_build,
-    version_code, version_name, version_os, is_emulator, is_prod)
 
-  res.json({
-    message : "App is up to date",
-    error:"NO_UPDATE_ERR"
-  })
-
+    if (version_name == 'builtin') {
+      res.json({
+        "version" : "1.1.1",
+        "url" : "https://firebasestorage.googleapis.com/v0/b/stock-police.appspot.com/o/build_files%2Fbuild_prod_1.1.1.zip?alt=media&token=9902af12-e6f0-4f3a-b96a-5af6463a7006"
+      })
+    } else {
+      res.json({
+        message : "App is up to date",
+        error:"NO_UPDATE_ERR"
+      })
+    }
 })
 
 app.post('/sendnotification', (req,res) => {
