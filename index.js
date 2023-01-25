@@ -145,7 +145,7 @@ app.post('/appVersionCheck', (req, res) => {
     version_os,
     is_emulator,
     is_prod} = req.body
-
+    console.log("Current Version : ", version_name)
     if (version_name == 'builtin') {
       res.json({
         "version" : "1.1.1",
