@@ -134,27 +134,20 @@ app.post('/refreshNotifications', (req, res) => {
 app.post('/appVersionCheck', (req, res) => {
 
   console.log("App Version Check")
-  const {platform,
-    device_id,
-    app_id,
-    custom_id,
-    plugin_version,
-    version_build,
-    version_code,
-    version_name,
-    version_os,
-    is_emulator,
-    is_prod} = req.body
-    console.log("Current Version : ", version_name)
-    if (version_name == 'builtin') {
+  
+  const {appVersion} = req.body
+
+  console.log("Current app version : ", appVersion)
+
+    if (appVersion == '1.1.0') {
       res.json({
-        "version" : "1.1.1",
+        "action" : "UPDATE",
+        "version" : "2.0.0",
         "url" : "https://firebasestorage.googleapis.com/v0/b/stock-police.appspot.com/o/build_files%2Fbuild_prod_1.1.1.zip?alt=media&token=9902af12-e6f0-4f3a-b96a-5af6463a7006"
       })
     } else {
       res.json({
-        message : "App is up to date",
-        error:"NO_UPDATE_ERR"
+        action : "IGNORE"
       })
     }
 })
