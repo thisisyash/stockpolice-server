@@ -143,7 +143,7 @@ app.post('/appVersionCheck', (req, res) => {
       res.json({
         "action" : "UPDATE",
         "version" : "2.0.0",
-        "url" : "https://firebasestorage.googleapis.com/v0/b/test-stockpolice.appspot.com/o/build_files%2Fbuild_test_2.0.0.zip?alt=media&token=9f5150d9-b6eb-4f51-9254-5d1243160c2b"
+        "url" : "https://firebasestorage.googleapis.com/v0/b/test-stockpolice.appspot.com/o/build_files%2Fbuild_test_2.0.0.zip?alt=media&token=4782884c-b2fe-47e3-9e2c-040b389449e3"
       })
     } else {
       res.json({
