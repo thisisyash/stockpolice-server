@@ -153,7 +153,7 @@ app.post('/appVersionCheck', (req, res) => {
 })
 
 app.post('/sendnotification', (req,res) => {
-  const {topic, body, uid} = req.body
+  const {topic, body, uid, fileType, fileLink,newBody } = req.body
   
   if (!body) {
     log("Sending notification without title or body")
@@ -165,8 +165,7 @@ app.post('/sendnotification', (req,res) => {
   
   const message = {
     notification: {
-      body:body,
-      newBody:newBody
+      body:body
     },
     android: {
       priority : 'high',
@@ -187,7 +186,10 @@ app.post('/sendnotification', (req,res) => {
       body      : body,
       topic     : topic,
       uid       : uid,
-      timeStamp : Date.now()
+      timeStamp : Date.now(),
+      newBody   : newBody,
+      fileType  : fileType,
+      fileLink  : fileLink
     }
     firestore.collection('alerts').doc(uid).set(notiData)
     .then(function(docRef) {
