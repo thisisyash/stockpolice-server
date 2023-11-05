@@ -165,7 +165,8 @@ app.post('/sendnotification', (req,res) => {
   
   const message = {
     notification: {
-      body:body
+      body:body,
+      newBody:newBody
     },
     android: {
       priority : 'high',
