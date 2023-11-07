@@ -280,3 +280,27 @@ const log = (label, value) => {
   else
     console.log(label)
 }
+
+
+app.post('/sendStatus', (req,res) => { 
+
+    const {topic, body, uid, fileLink} = req.body 
+
+    const notiData = { 
+      body      : body, 
+      topic     : topic, 
+      uid       : uid, 
+      fileLink  : fileLink, 
+      timeStamp : Date.now() 
+    } 
+    
+    firestore.collection('status').doc(uid).set(notiData)
+    .then(function(docRef) { 
+      log(`Status set with data`, JSON.stringify(notiData)) 
+      res.send({}) 
+    }).catch(function(error) { 
+      log(`Failed to set Status in db`, JSON.stringify(error)) 
+      res.send({error : error}) 
+    })
+})
+      
