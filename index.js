@@ -235,6 +235,8 @@ const createUser = async(mobileNo, userProfile) => {
 
         log(`User with mobile no ${mobileNo} already exists, merging groups...`)
 
+        console.log("============", docRef.data())
+        
         userDeviceToken = docRef.data().deviceToken
         firestore.collection('users').doc(mobileNo).update({
           groups : admin.firestore.FieldValue.arrayUnion(userProfile.groups[0]),
@@ -256,6 +258,9 @@ const createUser = async(mobileNo, userProfile) => {
           log(`User with mobile no ${mobileNo} merged.`)
         })
         .catch(function(error) {
+
+          console.log("============", error)
+
           reject('')
           log(`Failed to merge ${mobileNo} groups`, JSON.stringify(error))
         });
