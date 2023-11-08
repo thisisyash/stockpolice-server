@@ -242,13 +242,14 @@ const createUser = async(mobileNo, userProfile) => {
         })
         .then(function(docRef) {
 
+          console.log("===========", userToken, userProfile.groups[0])
           messaging.subscribeToTopic([userToken], userProfile.groups[0])
           .then((response) => {
             log('Successfully subscribed to topic:',userToken, userProfile.groups[0])
           })
           .catch((error) => {
             // res.send(error)
-            // log('Error subscribing to topic:', group, error)
+            log('Error subscribing to topic:', userToken, group, error)
           })
 
           resolve({})
