@@ -235,23 +235,19 @@ const createUser = async(mobileNo, userProfile) => {
 
         log(`User with mobile no ${mobileNo} already exists, merging groups...`)
 
-        console.log("============", docRef.data())
-        
         userDeviceToken = docRef.data().deviceToken
         firestore.collection('users').doc(mobileNo).update({
           groups : admin.firestore.FieldValue.arrayUnion(userProfile.groups[0]),
           clientCode : userProfile.clientCode
         })
         .then(function(docRef) {
-
-          console.log("===========", userToken, userProfile.groups[0])
-          messaging.subscribeToTopic([userToken], userProfile.groups[0])
+          messaging.subscribeToTopic([userDeviceToken], userProfile.groups[0])
           .then((response) => {
-            log('Successfully subscribed to topic:',userToken, userProfile.groups[0])
+            log('Successfully subscribed to topic:',userDeviceToken, userProfile.groups[0])
           })
           .catch((error) => {
             // res.send(error)
-            log('Error subscribing to topic:', userToken, group, error)
+            log('Error subscribing to topic:', userDeviceToken, group, error)
           })
 
           resolve({})
