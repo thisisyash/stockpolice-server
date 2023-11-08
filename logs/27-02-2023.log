@@ -1,0 +1,15 @@
+[20:34:51.108 27-02-2023] [INFO] New 
+[21:05:13.010 27-02-2023] [INFO] New 
+[21:06:36.392 27-02-2023] [INFO] Check server status
+[21:09:07.604 27-02-2023] [INFO] Check server status
+[21:09:21.691 27-02-2023] [INFO] Check server status
+[21:09:57.429 27-02-2023] [INFO] Check server status
+[21:10:21.350 27-02-2023] [INFO] Check server status
+[21:10:39.074 27-02-2023] [INFO] Check server status
+[21:11:00.641 27-02-2023] [INFO] Check server status
+[21:11:49.844 27-02-2023] [INFO] Check server status[object Object]
+[21:12:32.273 27-02-2023] [INFO] Check server status [{"help":"yes"}]
+[21:13:46.150 27-02-2023] [INFO] Check server status [{"help":"yes","not need":"okay"}]
+[21:34:17.431 27-02-2023] [INFO] Starting server in : development on port : 3600 []
+[21:34:39.816 27-02-2023] [INFO] Starting server in development on port 3600 []
+[21:38:06.940 27-02-2023] [INFO] Check server status [{}]
