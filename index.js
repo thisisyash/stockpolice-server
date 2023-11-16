@@ -187,9 +187,9 @@ app.post('/sendnotification', (req,res) => {
       topic     : topic,
       uid       : uid,
       timeStamp : Date.now(),
-      newBody   : newBody,
-      fileType  : fileType,
-      fileLink  : fileLink
+      newBody   : newBody  || null,
+      fileType  : fileType || null,
+      fileLink  : fileLink || null
     }
     firestore.collection('alerts').doc(uid).set(notiData)
     .then(function(docRef) {
