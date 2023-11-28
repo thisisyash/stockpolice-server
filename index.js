@@ -312,13 +312,46 @@ app.post('/sendStatus', (req,res) => {
       timeStamp : Date.now() 
     } 
     
+   
     firestore.collection('status').doc(uid).set(notiData)
     .then(function(docRef) { 
       log(`Status set with data`, JSON.stringify(notiData)) 
+
+
+      //Send notification start
+      const message = {
+        notification: {
+          body:'New status updated'
+        },
+        android: {
+          priority : 'high',
+          notification: {
+            sound      : 'mysound',
+            priority   : 'max',
+            channelId  : 'stockalert',
+            visibility : 'public'
+          }
+        }
+      }
+      messaging.send(message)
+      .then((response) => {
+        log('Successfully sent notification:', response)
+      })
+      .catch((error) => {
+        res.send({error : 'Some error occured sending notifications'})
+        log('Error sending notification:', error)
+      })
+      //Send notification end
+
+      
+
       res.send({}) 
     }).catch(function(error) { 
       log(`Failed to set Status in db`, JSON.stringify(error)) 
       res.send({error : error}) 
     })
+
+    
+
 })
       
