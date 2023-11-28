@@ -332,7 +332,7 @@ app.post('/sendStatus', (req,res) => {
             visibility : 'public'
           }
         },
-        topic : 'jJkgYrvYRjWAYj1kEJDw'
+        topic : 'DEyLhjXxf5NHNobvFMp0'
       }
       messaging.send(message)
       .then((response) => {
