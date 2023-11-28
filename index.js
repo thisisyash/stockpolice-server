@@ -331,7 +331,8 @@ app.post('/sendStatus', (req,res) => {
             channelId  : 'stockalert',
             visibility : 'public'
           }
-        }
+        },
+        topic : 'DEyLhjXxf5NHNobvFMp0'
       }
       messaging.send(message)
       .then((response) => {
@@ -343,7 +344,7 @@ app.post('/sendStatus', (req,res) => {
       })
       //Send notification end
 
-      
+
 
       res.send({}) 
     }).catch(function(error) { 
