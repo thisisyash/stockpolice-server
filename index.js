@@ -4,7 +4,7 @@ const cors       = require('cors')
 const multer     = require('multer')
 const reader     = require('xlsx')
 const fs         = require('fs')
-
+const { Storage } = require('@google-cloud/storage')
 var admin          = require("firebase-admin")
 
 var serviceAccount = require(`./${process.env.NODE_ENV == 'production' ? 'prod':'test'}_service_key.json`)
@@ -351,8 +351,132 @@ app.post('/sendStatus', (req,res) => {
       log(`Failed to set Status in db`, JSON.stringify(error)) 
       res.send({error : error}) 
     })
-
-    
-
 })
-      
+
+
+// New API endpoint to fetch video URLs
+app.get('/api/videos', async (req, res) => {
+  try {
+    // Query the 'videos' collection in Firestore
+    const videosSnapshot = await firestore.collection('spVideos').get();
+
+    // Extract video data from the snapshot
+    const videos = [];
+    videosSnapshot.forEach((doc) => {
+      videos.push({
+        id: doc.id,
+        ...doc.data(),
+      });
+    });
+
+    // Send the videos as a JSON response
+    res.status(200).json(videos);
+  } catch (error) {
+    console.error('Error fetching videos:', error);
+    res.status(500).send({ error: 'Failed to fetch videos' });
+  }
+});
+
+app.post('/uploadVideoData', async (req, res) => {
+  try {
+    const { videoTitle, videoDescription, videoTags, videoCategory, videoType, videoUrl } = req.body;
+
+    const videoData = {
+      title: videoTitle,
+      description: videoDescription,
+      tags: videoTags,
+      category: videoCategory,
+      type: videoType,
+      url: videoUrl,
+      timestamp: admin.firestore.FieldValue.serverTimestamp(),
+    };
+
+    const docRef = await firestore.collection('spVideos').add(videoData);
+    console.log('Video data uploaded successfully:', docRef.id);
+    res.status(200).send({ id: docRef.id });
+  } catch (error) {
+    console.error('Error uploading video data:', error);
+    res.status(500).send({ error: 'Failed to upload video data' });
+  }
+});
+
+app.post('/api/videos/:id/like', async (req, res) => {
+  const videoId = req.params.id;
+  try {
+    const videoRef = firestore.collection('spVideos').doc(videoId);
+    await firestore.runTransaction(async (transaction) => {
+      const videoDoc = await transaction.get(videoRef);
+      if (!videoDoc.exists) {
+        throw new Error('Video not found');
+      }
+      const newLikeCount = (videoDoc.data().likes || 0) + 1;
+      transaction.update(videoRef, { likes: newLikeCount });
+    });
+    res.status(200).send({ message: 'Like count updated successfully' });
+  } catch (error) {
+    console.error('Error updating like count:', error);
+    res.status(500).send({ error: 'Failed to update like count' });
+  }
+});
+
+app.post('/api/videos/:id/comment', async (req, res) => {
+  const videoId = req.params.id;
+  const { comment } = req.body;
+
+  try {
+    const videoRef = firestore.collection('spVideos').doc(videoId);
+    await firestore.runTransaction(async (transaction) => {
+      const videoDoc = await transaction.get(videoRef);
+      if (!videoDoc.exists) {
+        throw new Error('Video not found');
+      }
+      const comments = videoDoc.data().comments || [];
+      comments.push(comment);
+      transaction.update(videoRef, { comments });
+    });
+    res.status(200).send({ message: 'Comment added successfully' });
+  } catch (error) {
+    console.error('Error adding comment:', error);
+    res.status(500).send({ error: 'Failed to add comment' });
+  }
+});
+
+// Initialize Google Cloud Storage
+const fbStorage = new Storage({
+  projectId: process.env.GCLOUD_PROJECT_ID,
+  keyFilename: `./${process.env.NODE_ENV == 'production' ? 'prod':'test'}_service_key.json`
+});
+
+const bucketName = "gs://stock-police.appspot.com"; // Your Firebase Storage bucket name
+
+// API endpoint to upload video file
+app.post('/api/uploadVideo', upload.single('video'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).send({ error: 'No file uploaded' });
+    }
+
+    const filePath = req.file.path;
+    const destination = `spvideos/${req.file.originalname}`;
+
+    // Upload file to Firebase Storage
+    await fbStorage.bucket(bucketName).upload(filePath, {
+      destination,
+      metadata: {
+        contentType: req.file.mimetype,
+      },
+    });
+
+    // Get the public URL of the uploaded file
+    const file = fbStorage.bucket(bucketName).file(destination);
+    const [url] = await file.getSignedUrl({
+      action: 'read',
+      expires: '03-01-2500'
+    });
+
+    res.status(200).send({ url });
+  } catch (error) {
+    console.error('Error uploading video:', error);
+    res.status(500).send({ error: 'Failed to upload video' });
+  }
+});
