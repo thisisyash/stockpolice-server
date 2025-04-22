@@ -447,7 +447,7 @@ const fbStorage = new Storage({
   keyFilename: `./${process.env.NODE_ENV == 'production' ? 'prod':'test'}_service_key.json`
 });
 
-const bucketName = "gs://stock-police.appspot.com"; // Your Firebase Storage bucket name
+const bucketName = process.env.BUCKET_NAME;
 
 // API endpoint to upload video file
 app.post('/api/uploadVideo', upload.single('video'), async (req, res) => {
@@ -478,5 +478,25 @@ app.post('/api/uploadVideo', upload.single('video'), async (req, res) => {
   } catch (error) {
     console.error('Error uploading video:', error);
     res.status(500).send({ error: 'Failed to upload video' });
+  }
+});
+
+app.post('/api/videos/:id/markStar', async (req, res) => {
+  const videoId = req.params.id;
+  const { isStar } = req.body;
+
+  try {
+    const videoRef = firestore.collection('spVideos').doc(videoId);
+    await firestore.runTransaction(async (transaction) => {
+      const videoDoc = await transaction.get(videoRef);
+      if (!videoDoc.exists) {
+        throw new Error('Video not found');
+      }
+      transaction.update(videoRef, { type : isStar ? "Star Video" : "Normal" });
+    });
+    res.status(200).send({ message: 'Star status updated successfully' });
+  } catch (error) {
+    console.error('Error updating star status:', error);
+    res.status(500).send({ error: 'Failed to update star status' });
   }
 });
