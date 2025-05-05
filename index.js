@@ -554,7 +554,7 @@ app.post('/notifyAdminsOnRegister', async (req, res) => {
             },
           })
           .then((response) => {
-            log('Successfully sent admin notification:', response);
+            log('Successfully sent admin notification:', deviceToken, response);
             // Optionally, log to Firestore alerts collection
         
           })
