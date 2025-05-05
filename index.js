@@ -523,6 +523,7 @@ app.post('/api/videos/:id/markStar', async (req, res) => {
 // API to notify all admin users when a new user registers
 app.post('/notifyAdminsOnRegister', async (req, res) => {
   try {
+    const { username } = req.body;
     // Query all users with isAdmin == true
     const adminSnapshot = await firestore.collection('users').where('isAdmin', '==', true).get();
     if (adminSnapshot.empty) {
@@ -535,7 +536,7 @@ app.post('/notifyAdminsOnRegister', async (req, res) => {
       if (deviceToken) {
         // Prepare notification payload
         const notificationPayload = {
-          body: 'A new user has registered on StockPolice.',
+          body: `New user ${username ? ': ' + username : ''} has registered on StockPolice.`,
           uid: deviceToken,
         };
         // Use the same notification logic as /sendnotification
@@ -556,7 +557,6 @@ app.post('/notifyAdminsOnRegister', async (req, res) => {
           .then((response) => {
             log('Successfully sent admin notification:', deviceToken, response);
             // Optionally, log to Firestore alerts collection
-        
           })
           .catch((error) => {
             log('Error sending admin notification:', deviceToken, error);
