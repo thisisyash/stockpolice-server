@@ -536,7 +536,7 @@ app.post('/notifyAdminsOnRegister', async (req, res) => {
       if (deviceToken) {
         // Prepare notification payload
         const notificationPayload = {
-          body: `New user ${username ? ': ' + username : ''} has registered on StockPolice.`,
+          body: `New user ${username ? username : ''} has registered on StockPolice.`,
           uid: deviceToken,
         };
         // Use the same notification logic as /sendnotification
