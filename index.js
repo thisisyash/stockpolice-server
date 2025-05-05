@@ -36,8 +36,27 @@ app.listen(port,
   console.log(`Starting server in : ${process.env.NODE_ENV} on port : ${port}`)
 })
 app.use(bodyParser.json())
-app.use(cors())
-app.options('*', cors())
+
+const allowedOrigins = [
+  'https://stockpolice.trade/',
+  'https://stockpolice.app/'
+];
+
+app.use(cors({
+  origin: function(origin, callback){
+    // allow requests with no origin (like mobile apps, curl, etc.)
+    if(!origin) return callback(null, true);
+    if(allowedOrigins.indexOf(origin) === -1){
+      var msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
+  credentials: true // if you use cookies or authentication
+}));
+
+// This line ensures preflight requests are handled
+app.options('*', cors());
 
 app.get('/', async(req, res) => {
   log("Welcome")
@@ -516,7 +535,6 @@ app.post('/notifyAdminsOnRegister', async (req, res) => {
       if (deviceToken) {
         // Prepare notification payload
         const notificationPayload = {
-          topic: '', // Not using topic, sending to deviceToken directly
           body: 'A new user has registered on StockPolice.',
           uid: deviceToken,
         };
@@ -538,7 +556,7 @@ app.post('/notifyAdminsOnRegister', async (req, res) => {
           .then((response) => {
             log('Successfully sent admin notification:', response);
             // Optionally, log to Firestore alerts collection
-
+        
           })
           .catch((error) => {
             log('Error sending admin notification:', deviceToken, error);
