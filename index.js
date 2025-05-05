@@ -500,3 +500,57 @@ app.post('/api/videos/:id/markStar', async (req, res) => {
     res.status(500).send({ error: 'Failed to update star status' });
   }
 });
+
+// API to notify all admin users when a new user registers
+app.post('/notifyAdminsOnRegister', async (req, res) => {
+  try {
+    // Query all users with isAdmin == true
+    const adminSnapshot = await firestore.collection('users').where('isAdmin', '==', true).get();
+    if (adminSnapshot.empty) {
+      return res.status(404).send({ error: 'No admin users found' });
+    }
+    const notificationPromises = [];
+    adminSnapshot.forEach((doc) => {
+      const adminData = doc.data();
+      const deviceToken = adminData.deviceToken;
+      if (deviceToken) {
+        // Prepare notification payload
+        const notificationPayload = {
+          topic: '', // Not using topic, sending to deviceToken directly
+          body: 'A new user has registered on StockPolice.',
+          uid: deviceToken,
+        };
+        // Use the same notification logic as /sendnotification
+        notificationPromises.push(
+          messaging.send({
+            notification: { body: notificationPayload.body },
+            token: deviceToken,
+            android: {
+              priority: 'high',
+              notification: {
+                sound: 'mysound',
+                priority: 'max',
+                channelId: 'stockalert',
+                visibility: 'public',
+              },
+            },
+          })
+          .then((response) => {
+            log('Successfully sent admin notification:', response);
+            // Optionally, log to Firestore alerts collection
+
+          })
+          .catch((error) => {
+            log('Error sending admin notification:', deviceToken, error);
+            return null;
+          })
+        );
+      }
+    });
+    await Promise.all(notificationPromises);
+    res.send({ message: 'Notifications sent to all admin users.' });
+  } catch (error) {
+    console.error('Error notifying admin users:', error);
+    res.status(500).send({ error: 'Failed to notify admin users.' });
+  }
+});
