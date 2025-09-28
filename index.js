@@ -703,3 +703,58 @@ app.post('/notifyAdminsOnRegister', async (req, res) => {
     res.status(500).send({ error: 'Failed to notify admin users.' });
   }
 });
+
+// API to send chat message notification
+app.post('/sendChatNotification', async (req, res) => {
+  try {
+    const { receiverMobileNumber, senderName, message, isAdminSender } = req.body;
+    
+    if (!receiverMobileNumber || !message) {
+      return res.status(400).send({ error: 'Missing required fields' });
+    }
+
+    // Get receiver's device token
+    const receiverDoc = await firestore.collection('users').doc(receiverMobileNumber).get();
+    
+    if (!receiverDoc.exists) {
+      return res.status(404).send({ error: 'Receiver not found' });
+    }
+
+    const receiverData = receiverDoc.data();
+    const deviceToken = receiverData.deviceToken;
+
+    if (!deviceToken) {
+      log('No device token found for receiver:', receiverMobileNumber);
+      return res.status(200).send({ message: 'No device token available for receiver' });
+    }
+
+    // Prepare notification message (WhatsApp style)
+    const senderDisplayName = isAdminSender ? 'Admin' : (senderName || 'User');
+
+    // Send push notification
+    const messagePayload = {
+      notification: {
+        title: senderDisplayName,
+        body: message
+      },
+      token: deviceToken,
+      android: {
+        priority: 'high',
+        notification: {
+          sound: 'mysound',
+          priority: 'max',
+          channelId: 'stockalert',
+          visibility: 'public'
+        }
+      }
+    };
+
+    const response = await messaging.send(messagePayload);
+    log('Successfully sent chat notification:', deviceToken, response);
+    
+    res.status(200).send({ message: 'Chat notification sent successfully' });
+  } catch (error) {
+    console.error('Error sending chat notification:', error);
+    res.status(500).send({ error: 'Failed to send chat notification' });
+  }
+});
