@@ -709,27 +709,48 @@ app.post('/sendChatNotification', async (req, res) => {
   try {
     const { receiverMobileNumber, senderName, message, isAdminSender } = req.body;
     
+    log('=== CHAT NOTIFICATION REQUEST ===');
+    log('Receiver Mobile:', receiverMobileNumber);
+    log('Sender Name:', senderName);
+    log('Message:', message);
+    log('Is Admin Sender:', isAdminSender);
+    
     if (!receiverMobileNumber || !message) {
+      log('ERROR: Missing required fields - receiverMobileNumber:', receiverMobileNumber, 'message:', message);
       return res.status(400).send({ error: 'Missing required fields' });
     }
 
     // Get receiver's device token
+    log('Fetching receiver document for:', receiverMobileNumber);
     const receiverDoc = await firestore.collection('users').doc(receiverMobileNumber).get();
     
     if (!receiverDoc.exists) {
+      log('ERROR: Receiver not found in database:', receiverMobileNumber);
       return res.status(404).send({ error: 'Receiver not found' });
     }
 
     const receiverData = receiverDoc.data();
     const deviceToken = receiverData.deviceToken;
+    
+    log('Receiver data found:', {
+      userName: receiverData.userName,
+      hasDeviceToken: !!deviceToken,
+      deviceTokenLength: deviceToken ? deviceToken.length : 0
+    });
 
     if (!deviceToken) {
-      log('No device token found for receiver:', receiverMobileNumber);
+      log('WARNING: No device token found for receiver:', receiverMobileNumber);
       return res.status(200).send({ message: 'No device token available for receiver' });
     }
 
     // Prepare notification message (WhatsApp style)
     const senderDisplayName = isAdminSender ? 'Admin' : (senderName || 'User');
+    
+    log('Preparing notification payload:', {
+      title: senderDisplayName,
+      body: message,
+      token: deviceToken.substring(0, 20) + '...' // Log only first 20 chars for security
+    });
 
     // Send push notification
     const messagePayload = {
@@ -749,11 +770,22 @@ app.post('/sendChatNotification', async (req, res) => {
       }
     };
 
+    log('Sending push notification...');
     const response = await messaging.send(messagePayload);
-    log('Successfully sent chat notification:', deviceToken, response);
+    log('SUCCESS: Chat notification sent successfully:', {
+      messageId: response,
+      receiver: receiverMobileNumber,
+      sender: senderDisplayName
+    });
     
     res.status(200).send({ message: 'Chat notification sent successfully' });
   } catch (error) {
+    log('ERROR: Failed to send chat notification:', {
+      error: error.message,
+      stack: error.stack,
+      receiver: req.body.receiverMobileNumber,
+      sender: req.body.senderName
+    });
     console.error('Error sending chat notification:', error);
     res.status(500).send({ error: 'Failed to send chat notification' });
   }
