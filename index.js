@@ -705,7 +705,7 @@ app.post('/notifyAdminsOnRegister', async (req, res) => {
 });
 
 // API to send chat message notification
-app.post('/sendChatNotification', async (req, res) => {
+app.post('/api/sendChatNotification', async (req, res) => {
   try {
     const { receiverMobileNumber, senderName, message, isAdminSender } = req.body;
     
