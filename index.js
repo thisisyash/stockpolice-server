@@ -20,7 +20,12 @@ const storage = multer.diskStorage({
   },
 })
 
-const upload = multer({ storage: storage })
+const upload = multer({ 
+  storage: storage,
+  limits: {
+    fileSize: 50 * 1024 * 1024, // 50MB limit for video uploads
+  }
+})
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
@@ -35,7 +40,8 @@ app.listen(port,
 () => {
   console.log(`Starting server in : ${process.env.NODE_ENV} on port : ${port}`)
 })
-app.use(bodyParser.json())
+app.use(bodyParser.json({ limit: '50mb' }))
+app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }))
 
 const allowedOrigins = [
   'https://stockpolice.trade/',
@@ -407,6 +413,67 @@ app.post('/uploadVideoData', async (req, res) => {
   }
 });
 
+// API endpoint to upload banner video data to Firestore
+app.post('/api/bannerVideos', async (req, res) => {
+  try {
+    const { videoTitle, videoDescription, videoUrl, thumbnailUrl } = req.body;
+
+    const videoData = {
+      title: videoTitle,
+      description: videoDescription,
+      url: videoUrl,
+      thumbnailUrl: thumbnailUrl || '',
+      timestamp: admin.firestore.FieldValue.serverTimestamp(),
+    };
+
+    const docRef = await firestore.collection('bannerVideos').add(videoData);
+    console.log('Banner video data uploaded successfully:', docRef.id);
+    res.status(200).send({ id: docRef.id });
+  } catch (error) {
+    console.error('Error uploading banner video data:', error);
+    res.status(500).send({ error: 'Failed to upload banner video data' });
+  }
+});
+
+// API endpoint to fetch banner videos
+app.get('/api/bannerVideos', async (req, res) => {
+  try {
+    // Query the 'bannerVideos' collection in Firestore
+    const videosSnapshot = await firestore.collection('bannerVideos').orderBy('timestamp', 'desc').get();
+
+    // Extract video data from the snapshot
+    const videos = [];
+    videosSnapshot.forEach((doc) => {
+      videos.push({
+        id: doc.id,
+        ...doc.data(),
+      });
+    });
+
+    // Send the videos as a JSON response
+    res.status(200).json(videos);
+  } catch (error) {
+    console.error('Error fetching banner videos:', error);
+    res.status(500).send({ error: 'Failed to fetch banner videos' });
+  }
+});
+
+// API endpoint to delete banner video
+app.delete('/api/bannerVideos/:id', async (req, res) => {
+  try {
+    const videoId = req.params.id;
+    
+    // Delete the video document from Firestore
+    await firestore.collection('bannerVideos').doc(videoId).delete();
+    
+    console.log('Banner video deleted successfully:', videoId);
+    res.status(200).send({ message: 'Banner video deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting banner video:', error);
+    res.status(500).send({ error: 'Failed to delete banner video' });
+  }
+});
+
 app.post('/api/videos/:id/like', async (req, res) => {
   const videoId = req.params.id;
   try {
@@ -481,10 +548,86 @@ app.post('/api/uploadVideo', upload.single('video'), async (req, res) => {
       expires: '03-01-2500'
     });
 
+    // Clean up the temporary file
+    fs.unlinkSync(filePath);
+    console.log('Temporary video file cleaned up:', filePath);
+
     res.status(200).send({ url });
   } catch (error) {
     console.error('Error uploading video:', error);
     res.status(500).send({ error: 'Failed to upload video' });
+  }
+});
+
+// API endpoint to upload banner video file
+app.post('/api/uploadBannerVideo', upload.single('video'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).send({ error: 'No file uploaded' });
+    }
+
+    const filePath = req.file.path;
+    const destination = `bannervideos/${req.file.originalname}`;
+
+    // Upload file to Firebase Storage
+    await fbStorage.bucket(bucketName).upload(filePath, {
+      destination,
+      metadata: {
+        contentType: req.file.mimetype,
+      },
+    });
+
+    // Get the public URL of the uploaded file
+    const file = fbStorage.bucket(bucketName).file(destination);
+    const [url] = await file.getSignedUrl({
+      action: 'read',
+      expires: '03-01-2500'
+    });
+
+    // Clean up the temporary file
+    fs.unlinkSync(filePath);
+    console.log('Temporary banner video file cleaned up:', filePath);
+
+    res.status(200).send({ url });
+  } catch (error) {
+    console.error('Error uploading banner video:', error);
+    res.status(500).send({ error: 'Failed to upload banner video' });
+  }
+});
+
+// API endpoint to upload banner thumbnail file
+app.post('/api/uploadBannerThumbnail', upload.single('thumbnail'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).send({ error: 'No file uploaded' });
+    }
+
+    const filePath = req.file.path;
+    const destination = `bannerthumbnails/${req.file.originalname}`;
+
+    // Upload file to Firebase Storage
+    await fbStorage.bucket(bucketName).upload(filePath, {
+      destination,
+      metadata: {
+        contentType: req.file.mimetype,
+      },
+    });
+
+    // Get the public URL of the uploaded file
+    const file = fbStorage.bucket(bucketName).file(destination);
+    const [url] = await file.getSignedUrl({
+      action: 'read',
+      expires: '03-01-2500'
+    });
+
+    // Clean up the temporary file
+    fs.unlinkSync(filePath);
+    console.log('Temporary banner thumbnail file cleaned up:', filePath);
+
+    res.status(200).send({ url });
+  } catch (error) {
+    console.error('Error uploading banner thumbnail:', error);
+    res.status(500).send({ error: 'Failed to upload banner thumbnail' });
   }
 });
 
