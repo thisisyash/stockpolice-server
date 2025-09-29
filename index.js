@@ -4,6 +4,7 @@ const cors       = require('cors')
 const multer     = require('multer')
 const reader     = require('xlsx')
 const fs         = require('fs')
+const path       = require('path')
 const { Storage } = require('@google-cloud/storage')
 var admin          = require("firebase-admin")
 
@@ -16,7 +17,9 @@ const storage = multer.diskStorage({
     cb(null, 'contactFiles/')
   },
   filename: (req, file, cb) => {
-    cb(null, file.originalname)
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9)
+    const ext = path.extname(file.originalname)
+    cb(null, uniqueSuffix + ext)
   },
 })
 
@@ -531,7 +534,7 @@ app.post('/api/uploadVideo', upload.single('video'), async (req, res) => {
     }
 
     const filePath = req.file.path;
-    const destination = `spvideos/${req.file.originalname}`;
+    const destination = `spvideos/${req.file.filename}`;
 
     // Upload file to Firebase Storage
     await fbStorage.bucket(bucketName).upload(filePath, {
@@ -567,7 +570,7 @@ app.post('/api/uploadBannerVideo', upload.single('video'), async (req, res) => {
     }
 
     const filePath = req.file.path;
-    const destination = `bannervideos/${req.file.originalname}`;
+    const destination = `bannervideos/${req.file.filename}`;
 
     // Upload file to Firebase Storage
     await fbStorage.bucket(bucketName).upload(filePath, {
@@ -603,7 +606,7 @@ app.post('/api/uploadBannerThumbnail', upload.single('thumbnail'), async (req, r
     }
 
     const filePath = req.file.path;
-    const destination = `bannerthumbnails/${req.file.originalname}`;
+    const destination = `bannerthumbnails/${req.file.filename}`;
 
     // Upload file to Firebase Storage
     await fbStorage.bucket(bucketName).upload(filePath, {
